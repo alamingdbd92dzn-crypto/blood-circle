@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Circle - রক্তের খোঁজে এক অনন্য প্ল্যাটফর্ম</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Hind Siliguri for Bengali) -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandDark: '#070b19',
+                        brandRed: '#E63946',
+                        brandRedDark: '#990000',
+                        brandRedLight: '#FF6B6B',
+                        cardBg: '#0d182e',
+                        accentBlue: '#00d2ff'
+                    },
+                    fontFamily: {
+                        sans: ['Hind Siliguri', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #070b19;
+            color: #F8FAFC;
+            font-family: 'Hind Siliguri', sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        #waveCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        header, section, main, footer, div#sosModal, div#toast {
+            position: relative;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: rgba(13, 24, 46, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 210, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .rgb-border-box {
+            position: relative;
+            border-radius: 0.75rem;
+            background: #070b19;
+            padding: 2px;
+            z-index: 1;
+        }
+
+        .rgb-border-box::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, #ff0000, #00d2ff, #ff0055, #00ffff, #ff0000);
+            background-size: 400%;
+            border-radius: 0.85rem;
+            z-index: -1;
+            animation: rgbGlow 8s linear infinite;
+        }
+
+        @keyframes rgbGlow {
+            0% { background-position: 0 0; }
+            50% { background-position: 200% 0; }
+            100% { background-position: 0 0; }
+        }
+
+        .pulse-btn {
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(230, 57, 70, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(230, 57, 70, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(230, 57, 70, 0); }
+        }
+
+        .quote-slide {
+            display: none;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .quote-slide.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-brandRed selection:text-white">
+
+    <canvas id="waveCanvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-50 glass-card border-b border-cyan-500/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showSection('home')">
+                <div class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+                    <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="#00873E" stroke-width="16"/>
+                        <path d="M 50 82 C 40 60, 75 25, 125 25 C 138 25, 122 38, 100 42 C 78 46, 52 62, 50 82 Z" fill="#00873E"/>
+                        <path d="M 62 68 C 72 52, 92 48, 108 45 C 92 52, 72 60, 68 85 Z" fill="#00873E"/>
+                        <path d="M 150 118 C 160 140, 125 175, 75 175 C 62 175, 78 162, 100 158 C 122 154, 148 138, 150 118 Z" fill="#008000"/>
+                        <path d="M 138 132 C 128 148, 108 152, 92 155 C 108 148, 128 140, 132 115 Z" fill="#008000"/>
+                        <path d="M 100 58 C 100 58, 128 92, 128 116 C 128 131.5 115.5 144 100 144 C 84.5 144, 72 131.5, 72 116 C 72 92, 100 58, 100 58 Z" fill="#E50914"/>
+                        <rect x="94" y="96" width="12" height="32" rx="1.5" fill="#FFFFFF"/>
+                        <rect x="84" y="106" width="32" height="12" rx="1.5" fill="#FFFFFF"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-2xl font-extrabold tracking-wide bg-gradient-to-r from-white via-cyan-200 to-accentBlue bg-clip-text text-transparent">Blood Circle</span>
+                    <p class="text-xs text-cyan-300 font-light tracking-wider">জীবন বাঁচুক রক্তবন্ধনে</p>
+                </div>
+            </div>
+
+            <!-- Navigation Bar -->
+            <nav class="hidden md:flex items-center space-x-5 text-sm font-medium">
+                <button type="button" onclick="showSection('home')" class="hover:text-accentBlue transition flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-house text-accentBlue"></i> হোম</button>
+                <button type="button" onclick="showSection('search')" class="hover:text-accentBlue transition flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-magnifying-glass text-accentBlue"></i> ডোনার ডিরেক্টরি</button>
+                <button type="button" onclick="showSection('register')" class="hover:text-accentBlue transition flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-user-plus text-accentBlue"></i> ডোনার রেজিস্ট্রেশন</button>
+                <button type="button" onclick="showSection('dashboard')" class="hover:text-accentBlue transition flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-gauge text-accentBlue"></i> ড্যাশবোর্ড</button>
+                <button type="button" onclick="showSection('about')" class="hover:text-accentBlue transition flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-circle-info text-accentBlue"></i> পেজ সম্পর্কে</button>
+                
+                <div class="bg-cyan-950/80 border border-cyan-500/50 px-3 py-1 rounded-full text-xs text-cyan-200 flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid fa-users text-accentBlue"></i> রক্তদাতা সংখ্যা: (<span id="navDonorCount" class="text-white">০০</span>)
+                </div>
+            </nav>
+
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="openSosModal()" class="pulse-btn bg-gradient-to-r from-red-600 to-brandRedDark hover:from-red-500 hover:to-red-700 text-white font-bold py-2.5 px-5 rounded-full flex items-center gap-2 shadow-lg text-sm transition transform hover:-translate-y-0.5 cursor-pointer">
+                    <i class="fa-solid fa-truck-medical text-lg"></i>
+                    <span>SOS ইমার্জেন্সি</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Quotes Slider Banner -->
+    <section class="bg-gradient-to-r from-blue-950/80 via-brandDark to-blue-950/80 border-b border-cyan-900/30 py-4 relative overflow-hidden">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <div id="quote-container" class="min-h-[50px] flex items-center justify-center">
+                <div class="quote-slide active italic text-cyan-200 text-sm md:text-base font-medium">
+                    <i class="fa-solid fa-quote-left text-accentBlue mr-2 opacity-60"></i>
+                    "আপনার এক ব্যাগ রক্ত দিতে পারে অন্য একজনের নতুন জীবনের প্রতিশ্রুতি।"
+                    <i class="fa-solid fa-quote-right text-accentBlue ml-2 opacity-60"></i>
+                </div>
+                <div class="quote-slide italic text-cyan-200 text-sm md:text-base font-medium">
+                    <i class="fa-solid fa-quote-left text-accentBlue mr-2 opacity-60"></i>
+                    "রক্তদান মহাদান, রক্তদানে বাঁচান প্রাণ। রক্ত দিন, জীবন বাঁচান।"
+                    <i class="fa-solid fa-quote-right text-accentBlue ml-2 opacity-60"></i>
+                </div>
+                <div class="quote-slide italic text-cyan-200 text-sm md:text-base font-medium">
+                    <i class="fa-solid fa-quote-left text-accentBlue mr-2 opacity-60"></i>
+                    "স্বচ্ছন্দে করুন রক্তদান, রক্তদাতার মন অমলিন, দেহ থাকে সচ্ছল।"
+                    <i class="fa-solid fa-quote-right text-accentBlue ml-2 opacity-60"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Dynamic Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- HOME SECTION -->
+        <div id="sec-home" class="space-y-12">
+            
+            <div class="glass-card p-6 rounded-2xl flex items-center justify-between border-cyan-500/30">
+                <div class="flex items-center space-x-4">
+                    <div class="p-4 bg-cyan-500/10 text-accentBlue rounded-xl text-2xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm text-cyan-300 font-medium">প্ল্যাটফর্মে মোট নিবন্ধিত রক্তদাতা</h3>
+                        <p class="text-3xl font-extrabold text-white mt-1" id="totalDonorCount">৫</p>
+                    </div>
+                </div>
+                <button type="button" onclick="showSection('search')" class="bg-brandRed/20 hover:bg-brandRed/30 border border-brandRed text-red-200 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">
+                    সবাইকে দেখুন <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+
+            <div class="glass-card rounded-3xl p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between border-cyan-500/30">
+                <div class="space-y-6 md:w-2/3 z-10">
+                    <span class="bg-blue-950 text-cyan-300 border border-cyan-800/60 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">জরুরি রক্ত ডিরেক্টরি ও ডোনার ক্লাব</span>
+                    <h1 class="text-3xl md:text-5xl font-black text-white leading-tight">
+                        জরুরি মুহূর্তে <span class="text-accentBlue">রক্তদাতাদের</span> খুঁজুন এক ক্লিকেই!
+                    </h1>
+                    <p class="text-gray-300 text-base md:text-lg">
+                        Blood Circle হলো একটি স্মার্ট ও বিশ্বস্ত রক্তদান নেটওয়ার্ক। রক্ত খুঁজে পেতে সার্চ ফিল্টার ব্যবহার করুন অথবা সরাসরি ইমার্জেন্সি SOS রিকোয়েস্ট পাঠান।
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <button type="button" onclick="showSection('search')" class="bg-brandRed hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-lg shadow-red-900/40 cursor-pointer">
+                            <i class="fa-solid fa-magnifying-glass"></i> রক্তদাতা খুঁজুন
+                        </button>
+                        <button type="button" onclick="showSection('register')" class="bg-transparent border border-cyan-500/50 hover:bg-cyan-950/50 text-cyan-200 font-semibold px-6 py-3 rounded-xl transition flex items-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-hand-holding-hand text-accentBlue"></i> ডোনার হিসেবে যুক্ত হন
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-8 md:mt-0 md:w-1/3 flex justify-center z-10">
+                    <div class="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-accentBlue to-brandRed rounded-full opacity-20 blur-2xl animate-pulse"></div>
+                        <i class="fa-solid fa-droplet text-9xl text-brandRed drop-shadow-[0_10px_20px_rgba(230,57,70,0.5)]"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-brandRed animate-bounce"></i> সাম্প্রতিক জরুরি রক্তের পোস্ট (SOS Live)
+                    </h2>
+                    <span class="text-xs text-cyan-400">লাইভ নোটিফিকেশন সিস্টেম</span>
+                </div>
+                <div id="sosAlertsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- SEARCH FILTER DIRECTORY -->
+        <div id="sec-search" class="hidden space-y-8">
+            <div class="glass-card p-6 rounded-2xl">
+                <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-filter text-accentBlue"></i> স্মার্ট রক্তদাতা ফিল্টার ডিরেক্টরি
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs text-cyan-300 font-medium mb-1">রক্তের গ্রুপ</label>
+                        <div class="rgb-border-box">
+                            <select id="filterBloodGroup" class="w-full bg-[#070b19] border-none rounded-xl px-3 py-2 text-white focus:outline-none">
+                                <option value="">সকল গ্রুপ</option>
+                                <option value="A+">A+</option><option value="A-">A-</option>
+                                <option value="B+">B+</option><option value="B-">B-</option>
+                                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                <option value="O+">O+</option><option value="O-">O-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-cyan-300 font-medium mb-1">জেলা</label>
+                        <div class="rgb-border-box">
+                            <select id="filterDistrict" onchange="updateUpazilaOptions('filterDistrict', 'filterUpazila')" class="w-full bg-[#070b19] border-none rounded-xl px-3 py-2 text-white focus:outline-none">
+                                <option value="">সকল জেলা</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-cyan-300 font-medium mb-1">থানা / উপজেলা</label>
+                        <div class="rgb-border-box">
+                            <select id="filterUpazila" class="w-full bg-[#070b19] border-none rounded-xl px-3 py-2 text-white focus:outline-none">
+                                <option value="">সকল থানা/উপজেলা</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-cyan-300 font-medium mb-1">রক্তদানের প্রস্তুত অবস্থা</label>
+                        <div class="rgb-border-box">
+                            <select id="filterAvailability" class="w-full bg-[#070b19] border-none rounded-xl px-3 py-2 text-white focus:outline-none">
+                                <option value="">সকল ডোনার</option>
+                                <option value="ready">এখনই রক্তদানে প্রস্তুত (৯০ দিনের বেশি)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="resetFilters()" class="px-4 py-2 bg-gray-800 text-gray-300 rounded-xl hover:bg-gray-700 text-sm cursor-pointer">রিসেট</button>
+                    <button type="button" onclick="applyFilters()" class="px-6 py-2 bg-brandRed text-white rounded-xl font-semibold hover:bg-red-700 text-sm flex items-center gap-2 shadow-lg shadow-red-900/40 cursor-pointer">
+                        <i class="fa-solid fa-magnifying-glass"></i> ফিল্টার প্রয়োগ করুন
+                    </button>
+                </div>
+            </div>
+
+            <div id="donorList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- DONOR REGISTRATION -->
+        <div id="sec-register" class="hidden max-w-2xl mx-auto">
+            <div class="glass-card p-8 rounded-3xl space-y-6">
+                <div class="text-center space-y-2">
+                    <i class="fa-solid fa-droplet text-4xl text-brandRed"></i>
+                    <h2 class="text-2xl font-bold text-white">রক্তদাতা হিসেবে নিবন্ধন করুন</h2>
+                    <p class="text-xs text-gray-400">আপনার এক ফোটা রক্তে বাঁচতে পারে কোনো মুমূর্ষু রোগীর প্রাণ</p>
+                </div>
+
+                <form id="donorRegisterForm" onsubmit="handleRegistration(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-cyan-300 font-medium mb-1">পূর্ণ নাম *</label>
+                        <div class="rgb-border-box">
+                            <input type="text" id="regName" required placeholder="আপনার নাম লিখুন" class="w-full bg-[#070b19] border-none rounded-xl px-4 py-2.5 text-white focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-cyan-300 font-medium mb-1">রক্তের গ্রুপ *</label>
+                            <div class="rgb-border-box">
+                                <select id="regBloodGroup" required class="w-full bg-[#070b19] border-none rounded-xl px-4 py-2.5 text-white focus:outline-none">
+                                    <option value="">নির্বাচন করুন</option>
+                                    <option value="A+">A+</option><option value="A-">A-</option>
+                                    <option value="B+">B+</option><option value="B-">B-</option>
+                                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                    <option value="O+">O+</option><option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-cyan-300 font-medium mb-1">মোবাইল নম্বর *</label>
+                            <div class="rgb-border-box">
+                                <input type="tel" id="regPhone" required placeholder="017XXXXXXXX" class="w-full bg-[#070b19] border-none rounded-xl px-4 py-2.5 text-white focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-cyan-300 font-medium mb-1">জেলা *</label>
+                            <div class="rgb-border-box">
+                                <select id="regDistrict" required onchange="updateUpazilaOptions('regDistrict', 'regUpazila')" class="w-full bg-[#070b19] border-none rounded-xl px-4 py-2.5 text-white focus:outline-none">
+                                    <option value="">জেলা নির্বাচন করুন</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-cyan-300 font-medium mb-1">থানা/উপজেলা *</label>
+                            <div class="rgb-border-box">
+                                <select id="regUpazila" required class="w-full bg-[#070b19] border-none rounded-xl px-4 py-2.5 text-white focus:outline-none">
+                                    <option value="">উপজেলা নির্বাচন করুন</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-cyan-300 font-medium mb-1">সর্বশেষ রক্তদানের তারিখ</label>
+                        <div class="rgb-border-box">
+                            <input type="date" id="regLastDonation" class="w-full bg-[#070b19] border-none rounded-xl px-4 py-2.5 text-white focus:outline-none">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-brandRed hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-900/40 cursor-pointer">
+                        নিবন্ধন সম্পন্ন করুন
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- DONOR DASHBOARD -->
+        <div id="sec-dashboard" class="hidden space-y-8">
+            <div class="glass-card p-6 md:p-8 rounded-3xl">
+                <div class="flex flex-col sm:flex-row items-center justify-between border-b border-cyan-900/40 pb-6 gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-accentBlue to-brandRed flex items-center justify-center text-2xl font-bold text-white border-2 border-cyan-400">
+                            <span id="dashAvatar">A</span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white" id="dashName">আব্দুর রহমান</h2>
+                            <p class="text-xs text-cyan-300" id="dashLocation"><i class="fa-solid fa-location-dot"></i> মিরপুর, ঢাকা</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="bg-blue-950/80 border border-cyan-500 text-cyan-200 px-4 py-1.5 rounded-full text-sm font-semibold">
+                            গ্রুপ: <span id="dashGroup" class="text-white font-bold">O+</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="bg-brandDark/80 p-5 rounded-2xl border border-cyan-900/30 space-y-3">
+                        <h3 class="text-sm font-semibold text-cyan-300 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-accentBlue"></i> শেষ রক্তদানের তথ্য আপডেট
+                        </h3>
+                        <p class="text-xs text-gray-400">সর্বশেষ রক্তদানের তারিখ আপডেট রাখলে রোগীরা সঠিকভাবে আপনাকে খুঁজে পাবে।</p>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-xs text-gray-300">নতুন তারিখ নির্বাচন করুন:</label>
+                            <input type="date" id="dashLastDonationInput" class="w-full bg-black/40 border border-cyan-900/60 rounded-xl px-3 py-2 text-white focus:outline-none">
+                            <button type="button" onclick="updateLastDonationDate()" class="w-full bg-brandRed hover:bg-red-700 text-white font-medium py-2 rounded-xl text-sm transition cursor-pointer">
+                                তারিখ আপডেট করুন
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-brandDark/80 p-5 rounded-2xl border border-cyan-900/30 space-y-3 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-cyan-300 flex items-center gap-2">
+                                <i class="fa-solid fa-heart-pulse text-accentBlue"></i> রক্তদানের যোগ্যতা অবস্থা
+                            </h3>
+                            <div class="mt-4 p-4 rounded-xl bg-blue-950/40 border border-cyan-800/40 text-center">
+                                <span id="dashStatusBadge" class="text-lg font-bold text-green-400">আপনি বর্তমানে রক্তদানে প্রস্তুত!</span>
+                                <p id="dashDaysLeft" class="text-xs text-gray-400 mt-1">সর্বশেষ রক্তদানের ৩ মাস পূর্ণ হয়েছে।</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABOUT PAGE -->
+        <div id="sec-about" class="hidden max-w-3xl mx-auto space-y-6">
+            <div class="glass-card p-8 rounded-3xl space-y-6 border-cyan-500/30">
+                <div class="text-center space-y-2">
+                    <i class="fa-solid fa-circle-info text-4xl text-accentBlue"></i>
+                    <h2 class="text-2xl font-bold text-white">Blood Circle সম্পর্কে</h2>
+                    <p class="text-xs text-cyan-300">রক্তদানের রক্তিম বন্ধন ও মানবিক সেবার প্ল্যাটফর্ম</p>
+                </div>
+                <div class="space-y-4 text-gray-300 text-sm leading-relaxed border-t border-cyan-900/40 pt-4">
+                    <p>
+                        <strong>Blood Circle</strong> হলো বাংলাদেশের একটি নির্ভরযোগ্য এবং আধুনিক অনলাইনভিত্তিক জরুরি রক্তদান নেটওয়ার্ক। আমাদের মূল উদ্দেশ্য হলো জরুরি মুহূর্তে রক্তদাতা এবং রোগীর মধ্যে দ্রুত যোগাযোগ স্থাপন করা।
+                    </p>
+                    <p>
+                        এই প্ল্যাটফর্মের মাধ্যমে দেশের ৬৪টি জেলা ও সকল উপজেলার রক্তদাতারা খুব সহজেই একে অপরের সাথে যুক্ত হতে পারেন। কোনো মধ্যস্থতা ছাড়াই সরাসরি ডোনারের সাথে ফোনে যোগাযোগ করে জীবন বাঁচানোই আমাদের ব্রত।
+                    </p>
+                    <div class="bg-blue-950/40 border border-cyan-500/30 p-4 rounded-xl space-y-2">
+                        <h4 class="font-bold text-white">আমাদের প্রধান বৈশিষ্ট্যসমূহ:</h4>
+                        <ul class="list-disc list-inside space-y-1 text-xs text-cyan-200">
+                            <li>৬৪ জেলা ও উপজেলাভিত্তিক স্মার্ট ডোনার সার্চ ফিল্টার</li>
+                            <li>জরুরি মুহূর্তে তাৎক্ষণিক SOS নোটিফিকেশন সিস্টেম</li>
+                            <li>ডোনারদের সহজ রেজিস্ট্রেশন ও ড্যাশবোর্ড ম্যানেজমেন্ট</li>
+                            <li>মোবাইলে স্বয়ংক্রিয় ওয়েলকাম মেসেজ ও লাইভ ডোনার কাউন্ট</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SOS / Emergency Modal -->
+    <div id="sosModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg p-6 rounded-3xl border-cyan-500/50 relative">
+            <button type="button" onclick="closeSosModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-3 bg-red-600/20 text-brandRed rounded-xl">
+                    <i class="fa-solid fa-truck-medical text-2xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white">জরুরি রক্তের পোস্ট (SOS)</h3>
+                    <p class="text-xs text-cyan-300">নিকটস্থ রক্তদাতাদের কাছে নোটিফিকেশন পাঠানো হবে</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleSosSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-cyan-300 mb-1">রক্তের গ্রুপ *</label>
+                        <select id="sosGroup" required class="w-full bg-brandDark border border-cyan-900/60 rounded-xl px-3 py-2 text-white text-sm">
+                            <option value="A+">A+</option><option value="A-">A-</option>
+                            <option value="B+">B+</option><option value="B-">B-</option>
+                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                            <option value="O+">O+</option><option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-cyan-300 mb-1">পরিমাণ (ব্যাগ) *</label>
+                        <input type="number" id="sosBags" min="1" value="1" required class="w-full bg-brandDark border border-cyan-900/60 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-cyan-300 mb-1">হাসপাতাল / লোকেশন *</label>
+                    <input type="text" id="sosLocation" placeholder="হাসপাতালের নাম ও ঠিকানা" required class="w-full bg-brandDark border border-cyan-900/60 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-cyan-300 mb-1">যোগাযোগের মোবাইল নম্বর *</label>
+                    <input type="tel" id="sosPhone" placeholder="017XXXXXXXX" required class="w-full bg-brandDark border border-cyan-900/60 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-cyan-300 mb-1">অতিরিক্ত বিবরণ (ঐচ্ছিক)</label>
+                    <textarea id="sosNote" rows="2" placeholder="রোগীর সমস্যা বা সময়সীমা..." class="w-full bg-brandDark border border-cyan-900/60 rounded-xl px-3 py-2 text-white text-sm"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-brandRedDark hover:from-red-500 hover:to-red-700 text-white font-bold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-900/50 cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i> ইমার্জেন্সি রিকোয়েস্ট পাঠান
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gradient-to-r from-brandRed to-red-800 text-white px-5 py-3 rounded-xl shadow-2xl z-50 hidden flex items-center gap-2">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">অপারেশন সফল হয়েছে!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="glass-card border-t border-cyan-900/40 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+            <div class="flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-droplet text-brandRed"></i>
+                <span class="font-bold text-white">Blood Circle</span>
+            </div>
+            <p class="text-xs text-gray-400">জরুরি রক্ত ডিরেক্টরি এবং রক্তদাতাদের স্বেচ্ছাসেবী ক্লাব।</p>
+            <p class="text-xs text-gray-500">&copy; 2026 Blood Circle. সর্বস্বত্ব সংরক্ষিত।</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const upazilaData = {
+            "ঢাকা": ["ধানমন্ডি", "মিরপুর", "উত্তরা", "গুলশান", "মোহাম্মদপুর", "সাভার", "ধামরাই", "দোহার", "কেরাণীগঞ্জ", "নবাবগঞ্জ"],
+            "ফরিদপুর": ["আলফাডাঙ্গা", "ভাঙ্গা", "বোয়ালমারী", "চরভদ্রাসন", "ফরিদপুর সদর", "মধুখালী", "নগরকান্দা", "সদরপুর", "সালথা"],
+            "গাজীপুর": ["গাজীপুর সদর", "কালিয়াকৈর", "কালীগঞ্জ", "কাপাসিয়া", "শ্রীপুর"],
+            "গোপালগঞ্জ": ["গোপালগঞ্জ সদর", "কাশিয়ানী", "কোটালীপাড়া", "মুকসুদপুর", "টুঙ্গিপাড়া"],
+            "কিশোরগঞ্জ": ["অষ্টগ্রাম", "বাজিতপুর", "ভৈরব", "হোসেনপুর", "ইটনা", "করিমগঞ্জ", "কটিয়াদী", "কিশোরগঞ্জ সদর", "কুলিয়ারচর", "মিঠামইন", "নিকলী", "পাকুন্দিয়া", "তাড়াইল"],
+            "মাদারীপুর": ["কালকিনি", "মাদারীপুর সদর", "রাজৈর", "শিবচর", "ডাসার"],
+            "মানিকগঞ্জ": ["দৌলতপুর", "ঘিওর", "হরিরামপুর", "মানিকগঞ্জ সদর", "সাটুরিয়া", "শিবালয়", "সিংগাইর"],
+            "মুন্সীগঞ্জ": ["গজারিয়া", "লৌহজং", "মুন্সীগঞ্জ সদর", "সিরাজদিখান", "শ্রীনগর", "টংগিবাড়ী"],
+            "নারায়ণগঞ্জ": ["আড়াইহাজার", "বন্দর", "নারায়ণগঞ্জ সদর", "রূপগঞ্জ", "সোনারগাঁ"],
+            "নরসিংদী": ["বেলাবো", "মনোহরদী", "নরসিংদী সদর", "পলাশ", "রায়পুরা", "শিবপুর"],
+            "রাজবাড়ী": ["বালিয়াকান্দি", "গোয়ালন্দ", "কালুখালী", "পাংশা", "রাজবাড়ী সদর"],
+            "শরীয়তপুর": ["ভেদরগঞ্জ", "ডামুড্যা", "গোসাইরহাট", "নড়িয়া", "শরীয়তপুর সদর", "জাজিরা"],
+            "টাঙ্গাইল": ["বাসাইল", "ভূঞাপুর", "দেলদুয়ার", "ধনবাড়ী", "ঘাটাইল", "গোপালপুর", "কালিহাতী", "মধুপুর", "মির্জাপুর", "নাগরপুর", "সখিপুর", "টাঙ্গাইল সদর"],
+            "চট্টগ্রাম": ["পাঁচলাইশ", "কোতোয়ালী", "হালিশহর", "বায়েজিদ", "ডবলমুরিং", "পটিয়া", "হাটহাজারী", "সীতাকুণ্ড", "মিরসরাই", "আনোয়ারা", "বোয়ালখালী", "চন্দনাইশ", "সাতকানিয়া", "লোহাগাড়া", "বাঁশখালী", "ফটিকছড়ি", "রাউজান", "রাঙ্গুনিয়া", "সন্দ্বীপ", "কক্সবাজার সদর"],
+            "কক্সবাজার": ["কক্সবাজার সদর", "চকরিিয়া", "মহেশখালী", "উখিয়া", "টেকনাফ", "পেকুয়া", "রামু"],
+            "বান্দরবান": ["আলীকদম", "থানচি", "নাইক্ষ্যংছড়ি", "বান্দরবান সদর", "রুমা", "রোয়াংছড়ি", "লামা"],
+            "খাগড়াছড়ি": ["খাগড়াছড়ি সদর", "দীঘিনালা", "পানছড়ি", "লক্ষীছড়ি", "মহালছড়ি", "মাটিরাঙ্গা", "রামগড়", "মানিকছড়ি", "গুইমারা"],
+            "রাঙ্গামাটি": ["রাঙ্গামাটি সদর", "কাপ্তাই", "কাউখালী", "বাঘাইছড়ি", "বরকল", "লংগদু", "নানিয়ারচর"],
+            "নোয়াখালী": ["কোম্পানীগঞ্জ", "বেগমগঞ্জ", "সুধারাম (নোয়াখালী সদর)", "হাতিয়া", "সেনবাগ", "সুবর্ণচর", "চাটখিল", "কবিরহাট"],
+            "লক্ষ্মীপুর": ["কমলনগর", "রামগঞ্জ", "রামগতি", "রায়পুর", "লক্ষ্মীপুর সদর"],
+            "ফেনী": ["ফেনী সদর", "দাগনভূঞা", "সোনাগাজী", "ছাগলনাইয়া", "পরশুরাম", "ফুলগাজী"],
+            "কুমিল্লা": ["ব্রাহ্মণপাড়া", "বুড়িচং", "চান্দিনা", "চৌদ্দগ্রাম", "দাউদকান্দি", "দেবিদ্বার", "হোমনা", "লাকসাম", "মুরাদনগর", "নাঙ্গলকোট", "কুমিল্লা সদর", "মেঘনা", "মনোহরগঞ্জ", "সদর দক্ষিণ"],
+            "চাঁদপুর": ["চাঁদপুর সদর", "হাজীগঞ্জ", "কচুয়া", "ফরিদগঞ্জ", "মতলব উত্তর", "মতলব দক্ষিণ", "হাইমচর", "শাহরাস্তি"],
+            "ব্রাহ্মণবাড়িয়া": ["ব্রাহ্মণবাড়িয়া সদর", "আশুগঞ্জ", "নাসিরনগর", "নবীনগর", "সরাইল", "কসবা", "আখাউড়া", "বাঞ্ছারামপুর", "বিজয়নগর"],
+            "রাজশাহী": ["বোয়ালিয়া", "রাজপাড়া", "মতিহার", "শাহ মখদুম", "পবা", "বাগমারা", "দুর্গাপুর", "চারঘাট", "বাঘা", "তানোর", "গোদাগাড়ী"],
+            "বগুড়া": ["বগুড়া সদর", "শাজাহানপুর", "দুপচাঁচিয়া", "আদমদীঘি", "নন্দীগ্রাম", "সোনাতলা", "গাবতলী", "শেরপুর", "ধুনট", "সারিয়াকান্দি", "শিবগঞ্জ"],
+            "পাবনা": ["পাবনা সদর", "ঈশ্বরদী", "আটঘরিয়া", "চাটমোহর", "বেড়া", "সুজানগর", "ভাঙ্গুড়া", "ফরিদপুর"],
+            "সিরাজগঞ্জ": ["সিরাজগঞ্জ সদর", "কাজিপুর", "উল্লাপাড়া", "শাহজাদপুর", "রায়গঞ্জ", "তাড়াশ", "বেলকুচি", "কামারখন্দ", "চৌহালি"],
+            "নওগাঁ": ["নওগাঁ সদর", "মহাদেবপুর", "বদলগাছী", "পত্নীতলা", "ধামইরহাট", "রানীনগর", "আত্রাই", "মান্দা", "সাপাহার"],
+            "নাটোর": ["নাটোর সদর", "বাগাতিপাড়া", "বড়াইগ্রাম", "লালপুর", "গুরুদাসপুর", "সিংড়া"],
+            "চাঁপাইনবাবগঞ্জ": ["চাঁপাইনবাবগঞ্জ সদর", "গোমস্তাপুর", "নাচোল", "ভোলাহাট", "শিবগঞ্জ"],
+            "জয়পুরহাট": ["জয়পুরহাট সদর", "পাঁচবিবি", "আক্কেলপুর", "কালাই", "ক্ষেতলাল"],
+            "খুলনা": ["সোনাডাঙ্গা", "খালিশপুর", "খানজাহান আলী", "কোতোয়ালী", "বটিয়াঘাটা", "দাকোপ", "ডুমুরিয়া", "কয়রা", "পাইকগাছা", "ফুলতলা", "রূপসা", "তেরখাদা", "দিঘলিয়া"],
+            "যশোর": ["যশোর সদর", "অভয়নগর", "বাঘারপাড়া", "চৌগাছা", "ঝিকরগাছা", "কেশবপুর", "মণিরামপুর", "শার্শা"],
+            "কুষ্টিয়া": ["কুষ্টিয়া সদর", "কুমারখালী", "খোকসা", "দৌলতপুর", "ভেড়ামারা", "মিরপুর"],
+            "সাতক্ষীরা": ["সাতক্ষীরা সদর", "আশাশুনি", "কলারোয়া", "কালীগঞ্জ", "তালা", "দেবহাটা", "শ্যামনগর"],
+            "ঝিনাইদহ": ["ঝিনাইদহ সদর", "শৈলকুপা", "কালীগঞ্জ", "কোটচাঁদপুর", "মহেশপুর", "হরিণাকুন্ডু"],
+            "বাগেরহাট": ["বাগেরহাট সদর", "মোড়েলগঞ্জ", "মোংলা", "শরণখোলা", "রামপাল", "ফকিরহাট", "কচুয়া", "চিতলমারী", "মোল্লাহাট"],
+            "চুয়াডাঙ্গা": ["চুয়াডাঙ্গা সদর", "আলমডাঙ্গা", "দামুড়হুদা", "জীবননগর"],
+            "মাগুরা": ["মাগুরা সদর", "শ্রীপুর", "মহম্মদপুর", "শালিখা"],
+            "নড়াইল": ["নড়াইল সদর", "লোহাগড়া", "কালিয়া"],
+            "মেহেরপুর": ["মেহেরপুর সদর", "গাংনী", "মুজিবনগর"],
+            "বরিশাল": ["বরিশাল সদর", "বাকেরগঞ্জ", "বাবুগঞ্জ", "উজিরপুর", "বানারীপাড়া", "গৌরনদী", "আগৈলঝাড়া", "মেহেন্দীগঞ্জ", "হিজলা"],
+            "পটুয়াখালী": ["পটুয়াখালী সদর", "বাউফল", "দুমকি", "দশমিনা", "গলাচিপা", "কলাপাড়া", "মির্জাগঞ্জ", "রাঙ্গাবালী"],
+            "ভোলা": ["ভোলা সদর", "বোরহানউদ্দিন", "চরফ্যাশন", "দৌলতখান", "লালমোহন", "মনপুরা", "তজুমদ্দিন"],
+            "পিরোজপুর": ["পিরোজপুর সদর", "নাজিরপুর", "নেছারাবাদ", "ভান্ডারিয়া", "মঠবাড়িয়া", "কাউখালী", "ইন্দুরকানী"],
+            "বরগুনা": ["বরগুনা সদর", "আমতলী", "বেতাগি", "বামনা", "পাথরঘাটা", "তালতলী"],
+            "ঝালকাঠি": ["ঝালকাঠি সদর", "নলছিটি", "রাজাপুর", "কাঁঠালিয়া"],
+            "সিলেট": ["সিলেট সদর", "দক্ষিণ সুরমা", "বিশ্বনাথ", "গোলাপগঞ্জ", "বালাগঞ্জ", "কোম্পানীগঞ্জ", "গোয়াইনঘাট", "জকিগঞ্জ", "কানাইঘাট", "ফেঞ্চুগঞ্জ", "বিয়ানীবাজার"],
+            "সুনামগঞ্জ": ["সুনামগঞ্জ সদর", "দক্ষিণ সুনামগঞ্জ", "বিশ্বম্ভরপুর", "ছাতক", "দোয়ারাবাজার", "জগন্নাথপুর", "তাহিরপুর", "ধর্মপাশা", "শাল্লা", "দিরাই", "মধ্যনগর"],
+            "হবিগঞ্জ": ["হবিগঞ্জ সদর", "নবীগঞ্জ", "বাহুবল", "চুনারুঘাট", "মাধবপুর", "বানিয়াচং", "আজমিরীগঞ্জ", "লাখাই", "শায়েস্তাগঞ্জ"],
+            "মৌলভীবাজার": ["মৌলভীবাজার সদর", "শ্রীমঙ্গল", "কমলগঞ্জ", "রাজনগর", "কুলাউড়া", "জুড়ী", "বড়লেখা"],
+            "রংপুর": ["রংপুর সদর", "বদরগঞ্জ", "গংগাচড়া", "কাউনিয়া", "মিঠাপুকুর", "পীরগাছা", "পীরগঞ্জ", "তারাগঞ্জ"],
+            "দিনাজপুর": ["দিনাজপুর সদর", "বীরগঞ্জ", "বিরামপুর", "পার্বতীপুর", "বোচাগঞ্জ", "চিরিরবন্দর", "ফুলবাড়ী", "ঘোড়াঘাট", "হাকিমপুর", "কাহারোল", "খানসামা", "নবাবগঞ্জ", "বিরল"],
+            "গাইবান্ধা": ["গাইবান্ধা সদর", "ফুলছড়ি", "গোবিন্দগঞ্জ", "পলাশবাড়ী", "সাদুল্লাপুর", "সাঘাটা", "সুন্দরগঞ্জ"],
+            "কুড়িগ্রাম": ["কুড়িগ্রাম সদর", "নাগেশ্বরী", "ভুরুঙ্গামারী", "ফুলবাড়ী", "উলিপুর", "চিলমারী", "রৌমারী", "রাজিবপুর", "রাজারহাট"],
+            "নীলফামারী": ["নীলফামারী সদর", "ডোমার", "জলঢাকা", "কিশোরগঞ্জ", "সৈয়দপুর", "ডিমলা"],
+            "পঞ্চগড়": ["পঞ্চগড় সদর", "বোদা", "দেবীগঞ্জ", "আটোয়ারী", "তেঁতুলিয়া"],
+            "ঠাকুরগাঁও": ["ঠাকুরগাঁও সদর", "রানীশংকৈল", "বালিয়াডাঙ্গী", "পীরগঞ্জ", "হরিপুর"],
+            "লালমনিরহাট": ["লালমনিরহাট সদর", "আদিতমারী", "কালীগঞ্জ", "হাতীবান্ধা", "পাটগ্রাম"],
+            "ময়মনসিংহ": ["ময়মনসিংহ সদর", "মুক্তাগাছা", "ভালুকা", "ত্রিশাল", "হালুয়াঘাট", "ফুলপুর", "নান্দাইল", "ফুলবাড়িয়া", "গফরগাঁও", "ঈশ্বরগঞ্জ", "ধোবাউড়া", "তারাকান্দা"],
+            "জামালপুর": ["জামালপুর সদর", "মেলান্দহ", "ইসলামপুর", "দেওয়ানগঞ্জ", "বকশীগঞ্জ", "মাদারগঞ্জ", "সরিষাবাড়ী"],
+            "শেরপুর": ["শেরপুর সদর", "নালিতাবাড়ী", "ঝিনাইগাতী", "নকলা", "শ্রীবরদী"],
+            "নেত্রকোণা": ["নেত্রকোণা সদর", "কেন্দুয়া", "আটপাড়া", "কলমাকান্দা", "মোহনগঞ্জ", "খালিয়াজুরী", "দুর্গাপুর", "পূর্বধলা", "বারহাট্টা", "মদন"]
+        };
+
+        let donors = [
+            { id: 1, name: "আব্দুর রহমান", group: "O+", district: "ঢাকা", upazila: "মিরপুর", phone: "01711111111", lastDonation: "2025-10-10" },
+            { id: 2, name: "কামরুল হাসান", group: "A+", district: "ঢাকা", upazila: "উত্তরা", phone: "01822222222", lastDonation: "2026-09-01" },
+            { id: 3, name: "নাসরিন সুলতানা", group: "B-", district: "চট্টগ্রাম", upazila: "পাঁচলাইশ", phone: "01933333333", lastDonation: "2025-05-12" },
+            { id: 4, name: "সাকিব আহমেদ", group: "AB+", district: "সিলেট", upazila: "সিলেট সদর", phone: "01644444444", lastDonation: "2026-08-15" },
+            { id: 5, name: "তানভীর হোসেন", group: "O-", district: "রাজশাহী", upazila: "বোয়ালিয়া", phone: "01555555555", lastDonation: "2025-01-20" }
+        ];
+
+        let sosRequests = [
+            { id: 1, group: "O+", bags: 2, location: "ঢাকা মেডিকেল কলেজ হাসপাতাল", phone: "01700000000", note: "জরুরি সিজারিয়ান অপারেশন" },
+            { id: 2, group: "AB-", bags: 1, location: "চট্টগ্রাম মা ও শিশু হাসপাতাল", phone: "01800000000", note: "ডেঙ্গু প্লাটিলেট প্রয়োজন" }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initQuoteSlider();
+            renderSosAlerts();
+            renderDonors(donors);
+            populateDistricts();
+            initWaterWaveCanvas();
+            updateTotalCount();
+            showSection('home');
+        });
+
+        function updateTotalCount() {
+            const count = donors.length;
+            const countEl = document.getElementById('totalDonorCount');
+            const navCountEl = document.getElementById('navDonorCount');
+            if(countEl) countEl.innerText = count;
+            if(navCountEl) navCountEl.innerText = count < 10 ? '০' + count : count;
+        }
+
+        function populateDistricts() {
+            const districtSelects = ['filterDistrict', 'regDistrict'];
+            districtSelects.forEach(selectId => {
+                const el = document.getElementById(selectId);
+                if(el) {
+                    el.innerHTML = `<option value="">${selectId === 'filterDistrict' ? 'সকল জেলা' : 'জেলা নির্বাচন করুন'}</option>`;
+                    for (let dist in upazilaData) {
+                        let opt = document.createElement('option');
+                        opt.value = dist;
+                        opt.innerText = dist;
+                        el.appendChild(opt);
+                    }
+                }
+            });
+        }
+
+        function initWaterWaveCanvas() {
+            const canvas = document.getElementById('waveCanvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+            let ripples = [];
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                ripples.push({ x: e.clientX, y: e.clientY, radius: 2, alpha: 0.8 });
+            });
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                for (let i = 0; i < ripples.length; i++) {
+                    let r = ripples[i];
+                    ctx.beginPath();
+                    ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(0, 210, 255, ${r.alpha})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    r.radius += 2.5;
+                    r.alpha -= 0.02;
+
+                    if (r.alpha <= 0) {
+                        ripples.splice(i, 1);
+                        i--;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function initQuoteSlider() {
+            const slides = document.querySelectorAll('.quote-slide');
+            if(slides.length === 0) return;
+            let current = 0;
+            setInterval(() => {
+                slides[current].classList.remove('active');
+                current = (current + 1) % slides.length;
+                slides[current].classList.add('active');
+            }, 4000);
+        }
+
+        function showSection(sectionId) {
+            ['home', 'search', 'register', 'dashboard', 'about'].forEach(sec => {
+                const s = document.getElementById(`sec-${sec}`);
+                if(s) s.classList.add('hidden');
+            });
+            const target = document.getElementById(`sec-${sectionId}`);
+            if(target) target.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateUpazilaOptions(districtSelectId, upazilaSelectId) {
+            const district = document.getElementById(districtSelectId).value;
+            const upazilaSelect = document.getElementById(upazilaSelectId);
+            upazilaSelect.innerHTML = `<option value="">${districtSelectId === 'filterDistrict' ? 'সকল থানা/উপজেলা' : 'উপজেলা নির্বাচন করুন'}</option>`;
+
+            if (district && upazilaData[district]) {
+                upazilaData[district].forEach(up => {
+                    upazilaSelect.innerHTML += `<option value="${up}">${up}</option>`;
+                });
+            }
+        }
+
+        function isDonorReady(lastDateStr) {
+            if (!lastDateStr) return true;
+            const lastDate = new Date(lastDateStr);
+            const today = new Date();
+            const diffTime = Math.abs(today - lastDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays >= 90;
+        }
+
+        function renderDonors(data) {
+            const container = document.getElementById('donorList');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">কোনো রক্তদাতা খুঁজে পাওয়া যায়নি।</div>`;
+                return;
+            }
+
+            data.forEach(donor => {
+                const ready = isDonorReady(donor.lastDonation);
+                const card = `
+                    <div class="glass-card p-5 rounded-2xl border-cyan-500/30 space-y-4 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 rounded-full bg-brandRed/20 border border-brandRed flex items-center justify-center font-bold text-xl text-brandRedLight">
+                                    ${donor.group}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white text-base">${donor.name}</h3>
+                                    <p class="text-xs text-gray-400"><i class="fa-solid fa-location-dot text-brandRed"></i> ${donor.upazila}, ${donor.district}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs space-y-1 border-t border-cyan-900/30 pt-3 text-gray-300">
+                            <p>সর্বশেষ রক্তদান: <span class="text-cyan-200">${donor.lastDonation || 'তথ্য নেই'}</span></p>
+                            <p>অবস্থা: ${ready ? '<span class="text-green-400 font-semibold">প্রস্তুত (Ready)</span>' : '<span class="text-yellow-500 font-semibold">বিশ্রামে আছেন</span>'}</p>
+                        </div>
+
+                        <a href="tel:${donor.phone}" class="w-full bg-brandRed/30 border border-brandRed/50 hover:bg-brandRed text-white font-medium py-2 rounded-xl text-xs flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-phone"></i> কল করুন (${donor.phone})
+                        </a>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function applyFilters() {
+            const group = document.getElementById('filterBloodGroup').value;
+            const district = document.getElementById('filterDistrict').value;
+            const upazila = document.getElementById('filterUpazila').value;
+            const readyOnly = document.getElementById('filterAvailability').value;
+
+            const filtered = donors.filter(donor => {
+                if (group && donor.group !== group) return false;
+                if (district && donor.district !== district) return false;
+                if (upazila && donor.upazila !== upazila) return false;
+                if (readyOnly === 'ready' && !isDonorReady(donor.lastDonation)) return false;
+                return true;
+            });
+
+            renderDonors(filtered);
+            showToast("ফিল্টার সম্পন্ন হয়েছে!");
+        }
+
+        function resetFilters() {
+            document.getElementById('filterBloodGroup').value = "";
+            document.getElementById('filterDistrict').value = "";
+            document.getElementById('filterUpazila').innerHTML = '<option value="">সকল থানা/উপজেলা</option>';
+            document.getElementById('filterAvailability').value = "";
+            renderDonors(donors);
+        }
+
+        function handleRegistration(e) {
+            e.preventDefault();
+            const donorName = document.getElementById('regName').value;
+            const donorPhone = document.getElementById('regPhone').value;
+
+            const newDonor = {
+                id: donors.length + 1,
+                name: donorName,
+                group: document.getElementById('regBloodGroup').value,
+                district: document.getElementById('regDistrict').value,
+                upazila: document.getElementById('regUpazila').value,
+                phone: donorPhone,
+                lastDonation: document.getElementById('regLastDonation').value
+            };
+
+            donors.unshift(newDonor);
+            updateTotalCount();
+            
+            document.getElementById('dashName').innerText = newDonor.name;
+            document.getElementById('dashAvatar').innerText = newDonor.name.charAt(0);
+            document.getElementById('dashLocation').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${newDonor.upazila}, ${newDonor.district}`;
+            document.getElementById('dashGroup').innerText = newDonor.group;
+
+            alert(`মোবাইল (${donorPhone}) নম্বরে ওয়েলকাম মেসেজ পাঠানো হয়েছে:\n\n"মানবতার সেবায় এগিয়ে আসার জন্য আপনাকে অসংখ্য ধন্যবাদ এবং গ্রুপে স্বাগতম। রক্ত দিন, জীবন বাঁচান! ❤️"`);
+
+            showToast("রেজিস্ট্রেশন সফল হয়েছে!");
+            document.getElementById('donorRegisterForm').reset();
+            showSection('dashboard');
+            renderDonors(donors);
+        }
+
+        function openSosModal() {
+            const modal = document.getElementById('sosModal');
+            if(modal) modal.classList.remove('hidden');
+        }
+
+        function closeSosModal() {
+            const modal = document.getElementById('sosModal');
+            if(modal) modal.classList.add('hidden');
+        }
+
+        function handleSosSubmit(e) {
+            e.preventDefault();
+            const newSos = {
+                id: sosRequests.length + 1,
+                group: document.getElementById('sosGroup').value,
+                bags: document.getElementById('sosBags').value,
+                location: document.getElementById('sosLocation').value,
+                phone: document.getElementById('sosPhone').value,
+                note: document.getElementById('sosNote').value
+            };
+
+            sosRequests.unshift(newSos);
+            renderSosAlerts();
+            closeSosModal();
+            showToast("SOS রিকোয়েস্ট সম্প্রচার করা হয়েছে!");
+        }
+
+        function renderSosAlerts() {
+            const container = document.getElementById('sosAlertsContainer');
+            if(!container) return;
+            container.innerHTML = '';
+
+            sosRequests.forEach(sos => {
+                const item = `
+                    <div class="glass-card p-4 rounded-2xl border-l-4 border-l-brandRed flex flex-col justify-between space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="bg-red-900/80 text-red-200 px-2 py-0.5 rounded text-xs font-bold">${sos.group} - ${sos.bags} ব্যাগ</span>
+                                <h4 class="text-sm font-bold text-white mt-1">${sos.location}</h4>
+                            </div>
+                            <i class="fa-solid fa-bell text-brandRed animate-pulse"></i>
+                        </div>
+                        <p class="text-xs text-gray-300 line-clamp-2">${sos.note || 'জরুরি প্রয়োজন'}</p>
+                        <a href="tel:${sos.phone}" class="bg-brandRed hover:bg-red-700 text-white text-center py-1.5 rounded-lg text-xs font-semibold transition">
+                            যোগাযোগ: ${sos.phone}
+                        </a>
+                    </div>
+                `;
+                container.innerHTML += item;
+            });
+        }
+
+        function updateLastDonationDate() {
+            const newDate = document.getElementById('dashLastDonationInput').value;
+            if(!newDate) return;
+
+            const ready = isDonorReady(newDate);
+            const badge = document.getElementById('dashStatusBadge');
+            const daysLeft = document.getElementById('dashDaysLeft');
+
+            if (ready) {
+                badge.innerText = "আপনি বর্তমানে রক্তদানে প্রস্তুত!";
+                badge.className = "text-lg font-bold text-green-400";
+                daysLeft.innerText = "রক্তদানের নির্ধারিত সময় পূর্ণ হয়েছে।";
+            } else {
+                badge.innerText = "আপনি বিশ্রামে আছেন";
+                badge.className = "text-lg font-bold text-yellow-500";
+                daysLeft.innerText = "রক্তদানের ৩ মাস অতিবাহিত হওয়ার পর পুনরায় দিতে পারবেন।";
+            }
+
+            showToast("তারিখ আপডেট করা হয়েছে!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
